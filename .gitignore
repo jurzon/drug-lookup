@@ -45,3 +45,6 @@ Thumbs.db
 
 # OS files
 desktop.ini
+
+# Claude Code local settings
+.claude/
