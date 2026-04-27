@@ -46,9 +46,13 @@ export async function searchDrugByName(name: string): Promise<Drug | null> {
     throw new ValidationError('name must not be empty');
   }
 
-  const phrase = `"${escapeLucene(trimmed)}"`;
+  // Encode only the user-supplied name. The surrounding query syntax (+OR+, :, ", parens)
+  // must stay literal: openFDA's parser does not URL-decode %2B back into the + boolean
+  // delimiter, so encoding the whole search clause silently breaks OR queries.
+  const encodedName = encodeURIComponent(escapeLucene(trimmed));
+  const phrase = `"${encodedName}"`;
   const search = `(openfda.generic_name:${phrase}+OR+openfda.brand_name:${phrase})`;
-  const url = `${ENDPOINT}?search=${encodeURIComponent(search)}&limit=1`;
+  const url = `${ENDPOINT}?search=${search}&limit=1`;
 
   let response: Response;
   try {
