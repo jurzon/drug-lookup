@@ -1,5 +1,6 @@
 import type { Drug } from '../types/drug.ts';
 import { renderDrugCard } from './drugCard.ts';
+import { renderDrugList } from './drugList.ts';
 
 export type ResultArea = {
   readonly element: HTMLElement;
@@ -7,7 +8,8 @@ export type ResultArea = {
   showLoading(): void;
   showError(message: string): void;
   showNotFound(query: string): void;
-  showDrug(drug: Drug): void;
+  showList(drugs: Drug[], onSelect: (drug: Drug) => void, truncated: boolean): void;
+  showDetail(drug: Drug, onBack: () => void): void;
 };
 
 export function createResultArea(): ResultArea {
@@ -30,6 +32,20 @@ export function createResultArea(): ResultArea {
     return p;
   }
 
+  function detailView(drug: Drug, onBack: () => void): HTMLElement {
+    const wrap = document.createElement('div');
+    wrap.className = 'detail-view';
+
+    const back = document.createElement('button');
+    back.type = 'button';
+    back.className = 'back-button';
+    back.textContent = '← Back to results';
+    back.addEventListener('click', onBack);
+
+    wrap.append(back, renderDrugCard(drug));
+    return wrap;
+  }
+
   return {
     element,
     showIdle() {
@@ -44,8 +60,11 @@ export function createResultArea(): ResultArea {
     showNotFound(query) {
       replace(message(`No results for "${query}".`, 'info'));
     },
-    showDrug(drug) {
-      replace(renderDrugCard(drug));
+    showList(drugs, onSelect, truncated) {
+      replace(renderDrugList(drugs, onSelect, truncated));
+    },
+    showDetail(drug, onBack) {
+      replace(detailView(drug, onBack));
     },
   };
 }

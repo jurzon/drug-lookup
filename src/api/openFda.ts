@@ -40,19 +40,19 @@ function escapeLucene(value: string): string {
   return value.replace(LUCENE_SPECIAL, '\\$1');
 }
 
-export async function searchDrugByName(name: string): Promise<Drug | null> {
-  const trimmed = name.trim();
+export async function searchDrugsByPrefix(prefix: string, limit = 10): Promise<Drug[]> {
+  const trimmed = prefix.trim();
   if (trimmed === '') {
-    throw new ValidationError('name must not be empty');
+    throw new ValidationError('prefix must not be empty');
   }
 
-  // Encode only the user-supplied name. The surrounding query syntax (+OR+, :, ", parens)
-  // must stay literal: openFDA's parser does not URL-decode %2B back into the + boolean
-  // delimiter, so encoding the whole search clause silently breaks OR queries.
-  const encodedName = encodeURIComponent(escapeLucene(trimmed));
-  const phrase = `"${encodedName}"`;
-  const search = `(openfda.generic_name:${phrase}+OR+openfda.brand_name:${phrase})`;
-  const url = `${ENDPOINT}?search=${search}&limit=1`;
+  // Append the literal `*` AFTER escape+encode so it stays unescaped in the URL.
+  // No quote-wrapping: Lucene does not expand wildcards inside a quoted phrase.
+  // The surrounding query syntax (+OR+, :, parens) must stay literal — see fix d477d41.
+  const encoded = encodeURIComponent(escapeLucene(trimmed));
+  const wildcard = `${encoded}*`;
+  const search = `(openfda.generic_name:${wildcard}+OR+openfda.brand_name:${wildcard})`;
+  const url = `${ENDPOINT}?search=${search}&limit=${limit}`;
 
   let response: Response;
   try {
@@ -62,7 +62,7 @@ export async function searchDrugByName(name: string): Promise<Drug | null> {
   }
 
   if (response.status === 404) {
-    return null;
+    return [];
   }
 
   if (!response.ok) {
@@ -74,10 +74,16 @@ export async function searchDrugByName(name: string): Promise<Drug | null> {
   }
 
   const data = (await response.json()) as OpenFdaResponse;
-  const first = data.results?.[0];
-  if (!first) {
-    return null;
-  }
+  const raw = data.results ?? [];
 
-  return mapOpenFdaToDrug(first);
+  // Dedupe by set_id (Drug.id). Same label record can appear more than once when
+  // both generic_name and brand_name match the prefix.
+  const byId = new Map<string, Drug>();
+  for (const item of raw) {
+    const drug = mapOpenFdaToDrug(item);
+    if (!byId.has(drug.id)) {
+      byId.set(drug.id, drug);
+    }
+  }
+  return Array.from(byId.values());
 }

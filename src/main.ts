@@ -1,8 +1,12 @@
 import './style.css';
-import { searchDrugByName, ValidationError, FetchError, ApiError } from './api/openFda.ts';
+import { searchDrugsByPrefix, ValidationError, FetchError, ApiError } from './api/openFda.ts';
+import type { Drug } from './types/drug.ts';
 import { renderDisclaimer } from './ui/disclaimer.ts';
 import { createSearchForm } from './ui/searchForm.ts';
 import { createResultArea } from './ui/resultArea.ts';
+
+const MIN_PREFIX_LENGTH = 3;
+const SEARCH_LIMIT = 10;
 
 const app = document.querySelector<HTMLDivElement>('#app');
 if (!app) {
@@ -15,21 +19,36 @@ heading.textContent = 'DrugLookup';
 const banner = renderDisclaimer();
 const result = createResultArea();
 
+let lastResults: Drug[] = [];
+let lastTruncated = false;
+
+const onSelect = (drug: Drug): void => {
+  result.showDetail(drug, () => {
+    result.showList(lastResults, onSelect, lastTruncated);
+  });
+};
+
 const form = createSearchForm(async (raw) => {
   const name = raw.trim();
   if (name === '') {
     result.showError('Please enter a drug name.');
     return;
   }
+  if (name.length < MIN_PREFIX_LENGTH) {
+    result.showError(`Please enter at least ${MIN_PREFIX_LENGTH} characters.`);
+    return;
+  }
 
   result.showLoading();
   try {
-    const drug = await searchDrugByName(name);
-    if (drug === null) {
+    const drugs = await searchDrugsByPrefix(name, SEARCH_LIMIT);
+    if (drugs.length === 0) {
       result.showNotFound(name);
-    } else {
-      result.showDrug(drug);
+      return;
     }
+    lastResults = drugs;
+    lastTruncated = drugs.length === SEARCH_LIMIT;
+    result.showList(drugs, onSelect, lastTruncated);
   } catch (error) {
     if (error instanceof ValidationError) {
       result.showError('Please enter a drug name.');

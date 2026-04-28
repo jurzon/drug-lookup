@@ -139,3 +139,88 @@ body {
   color: #555;
   font-style: italic;
 }
+
+.drug-list-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.drug-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.drug-list__item {
+  margin: 0;
+}
+
+.drug-list__button {
+  width: 100%;
+  text-align: left;
+  padding: 0.65rem 0.85rem;
+  font: inherit;
+  background: #fafafa;
+  color: #222;
+  border: 1px solid #d0d0d0;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.drug-list__button:hover {
+  background: #eef2ff;
+  border-color: #1f6feb;
+}
+
+.drug-list__button:focus-visible {
+  outline: 2px solid #1f6feb;
+  outline-offset: 2px;
+}
+
+.drug-list__name {
+  font-weight: 600;
+  font-size: 1rem;
+}
+
+.drug-list__brands {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.3rem;
+}
+
+.drug-list__more {
+  margin: 0;
+  padding: 0.5rem 0.25rem 0;
+  font-size: 0.85rem;
+  color: #555;
+  font-style: italic;
+}
+
+.detail-view {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.back-button {
+  align-self: flex-start;
+  padding: 0.35rem 0.75rem;
+  font: inherit;
+  font-size: 0.9rem;
+  background: transparent;
+  color: #1f6feb;
+  border: 1px solid #1f6feb;
+  border-radius: 0.375rem;
+  cursor: pointer;
+}
+
+.back-button:hover {
+  background: #eef2ff;
+}
